@@ -17,3 +17,8 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Data files (download separately - see data/README_DATA.md)
+data/*.csv
+data/*.xls
+data/*.xlsx

@@ -1,5 +1,5 @@
 # ============================================================
-# 02_unique_categories.R - Q1: Unique Headline Categories
+# 02_unique_categories.R - Q1: Unique Headline Categories (6 marks)
 # ============================================================
 # Question: How many unique values are there in headline_category?
 # ============================================================

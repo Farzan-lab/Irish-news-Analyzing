@@ -1,15 +1,18 @@
 # ============================================================
-# 08_period_analysis.R - Q7: Period-Based Analysis (2019-2020)
+# 08_period_analysis.R - Q7: Period-Based Analysis 2019-2020 (3 marks)
 # ============================================================
-# Question: Filter 2019-2020 data, assign quarterly periods (1-8),
+# Question: Filter 2019-2020, assign quarterly periods (1-8),
 #           compute articles by period & category, generate boxplot.
 # ============================================================
+
+library(dplyr)
+library(lubridate)
+library(ggplot2)
 
 # Filter data for 2019 and 2020 only
 ds_filtered <- ds %>% filter(year(date_parsed) %in% c(2019, 2020))
 
 # Create Period column based on quarterly date ranges
-# Period 1-4 = Q1-Q4 of 2019, Period 5-8 = Q1-Q4 of 2020
 ds_filtered <- ds_filtered %>%
   mutate(Period = case_when(
     date_parsed >= as.Date("2019-01-01") & date_parsed <= as.Date("2019-03-31") ~ "Period 1",
@@ -27,13 +30,12 @@ period_counts <- ds_filtered %>%
   group_by(Period, headline_category) %>%
   summarise(total_articles = n(), .groups = "drop")
 
-cat("=== Article Counts by Period ===\n")
-print(period_counts)
+cat("=== Article Counts by Period (sample) ===\n")
+print(head(period_counts, 20))
 
-# Generate boxplot showing distribution of total articles for each period
+# Generate boxplot
 ggplot(period_counts, aes(x = Period, y = total_articles)) +
   geom_boxplot(fill = "lightblue") +
   labs(title = "Distribution of Total Articles by Period (2019-2020)",
-       x = "Period",
-       y = "Total Number of Articles") +
+       x = "Period", y = "Total Number of Articles") +
   theme_minimal()
