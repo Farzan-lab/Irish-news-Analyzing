@@ -3,13 +3,14 @@
 # ============================================================
 
 # Load required libraries
+install.packages("dplyr")
 library(dplyr)
 library(lubridate)
 library(ggplot2)
 library(tidyr)
 
 # Load dataset - UPDATE THIS PATH to your actual file location
-ds <- read.csv("your_dataset.csv", stringsAsFactors = FALSE)
+ds <- read.csv("C:/Users/farza/Uni/S2/Fundamental of Data Science/assignment2/ireland_news.csv", stringsAsFactors = FALSE)
 
 # Parse publish_date: remove ordinal suffixes (st, nd, rd, th) and convert to Date
 ds$date_parsed <- dmy(gsub("(\\d+)(st|nd|rd|th)", "\\1", ds$publish_date))
