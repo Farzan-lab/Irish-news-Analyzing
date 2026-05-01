@@ -7,7 +7,15 @@
 # Count the number of unique values in headline_category
 num_unique <- length(unique(ds$headline_category))
 cat("Number of unique headline categories:", num_unique, "\n")
+# Count the number of unique values in headline_category column
+length(unique(ds$headline_category))
+
+
+cat(paste(sort(unique(ds$headline_category)), collapse = "\n"))
+
+
+# Count the number of unique values in headline_category
+length(unique(ds$headline_category))
 
 # Display all unique category names sorted alphabetically
-cat("\n=== All Unique Categories ===\n")
-cat(paste(sort(unique(ds$headline_category)), collapse = "\n"))
+sort(unique(ds$headline_category))

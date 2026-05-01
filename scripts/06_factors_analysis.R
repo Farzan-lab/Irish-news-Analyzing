@@ -9,6 +9,7 @@
 library(dplyr)
 library(lubridate)
 library(ggplot2)
+library(scales)
 
 # ============================================================
 # SECTION 1: DATA QUALITY & NA ASSESSMENT
@@ -60,8 +61,17 @@ if (chi_test$p.value < 0.05) {
   cat("Result: NA appears randomly distributed (MCAR)\n")
 }
 
-# Apply Complete Case Analysis
+# Apply Complete Case Analysis and create ALL derived columns upfront
 ds_clean <- ds %>% filter(!is.na(engagement_score))
+
+ds_clean$date_parsed <- dmy(gsub("(\\d+)(st|nd|rd|th)", "\\1", ds_clean$publish_date))
+ds_clean$year <- year(ds_clean$date_parsed)
+ds_clean$month_num <- month(ds_clean$date_parsed)
+ds_clean$month_name <- month(ds_clean$date_parsed, label = TRUE)
+ds_clean$day_of_week <- wday(ds_clean$date_parsed, label = TRUE)
+ds_clean$headline_length <- nchar(ds_clean$headline_text)
+ds_clean$main_category <- sapply(strsplit(ds_clean$headline_category, "\\."), function(x) x[1])
+
 cat("\nRows after removing NA:", nrow(ds_clean), "\n")
 
 # ============================================================
@@ -82,6 +92,8 @@ ggplot(ds_clean, aes(x = engagement_score)) +
   geom_histogram(bins = 50, fill = "steelblue", color = "white", alpha = 0.8) +
   geom_vline(aes(xintercept = mean(engagement_score)), color = "red", linetype = "dashed") +
   geom_vline(aes(xintercept = median(engagement_score)), color = "green", linetype = "dashed") +
+  scale_x_continuous(labels = scales::comma) +
+  scale_y_continuous(labels = scales::comma) +
   labs(title = "Distribution of Engagement Score",
        subtitle = "Red = Mean, Green = Median",
        x = "Engagement Score", y = "Count") +
@@ -138,8 +150,6 @@ t_test_cat <- t.test(engagement_score ~ group, data = ds_top_bottom)
 cat("\nT-test Top 5 vs Bottom 5 categories: p-value =", t_test_cat$p.value, "\n")
 
 # Main category analysis
-ds_clean$main_category <- sapply(strsplit(ds_clean$headline_category, "\\."), function(x) x[1])
-
 main_cat_stats <- ds_clean %>%
   group_by(main_category) %>%
   summarise(
@@ -234,7 +244,6 @@ ggplot(yearly_provider, aes(x = year, y = mean_score, color = news_provider)) +
   theme_minimal()
 
 # Monthly seasonality
-ds_clean$month_name <- month(ds_clean$date_parsed, label = TRUE)
 monthly_pattern <- ds_clean %>%
   group_by(month_name) %>%
   summarise(mean_score = mean(engagement_score), .groups = "drop")
@@ -245,7 +254,6 @@ ggplot(monthly_pattern, aes(x = month_name, y = mean_score, group = 1)) +
   theme_minimal()
 
 # Day of week pattern
-ds_clean$day_of_week <- wday(ds_clean$date_parsed, label = TRUE)
 daily_pattern <- ds_clean %>%
   group_by(day_of_week) %>%
   summarise(mean_score = mean(engagement_score), .groups = "drop")
@@ -266,20 +274,15 @@ cat("\n============================================================\n")
 cat("SECTION 6: HEADLINE LENGTH ANALYSIS\n")
 cat("============================================================\n")
 
-ds_clean$headline_length <- nchar(ds_clean$headline_text)
-ds_clean$word_count <- sapply(strsplit(ds_clean$headline_text, "\\s+"), length)
-
+# Correlation: character length vs engagement
 cor_length <- cor.test(ds_clean$headline_length, ds_clean$engagement_score)
 cat("Character Length - Correlation:", cor_length$estimate, "P-value:", cor_length$p.value, "\n")
 
-cor_words <- cor.test(ds_clean$word_count, ds_clean$engagement_score)
-cat("Word Count - Correlation:", cor_words$estimate, "P-value:", cor_words$p.value, "\n")
-
+# Scatter plot with regression line
 ggplot(ds_clean, aes(x = headline_length, y = engagement_score)) +
   geom_point(alpha = 0.1) +
   geom_smooth(method = "lm", color = "red") +
-  geom_smooth(method = "loess", color = "blue", linetype = "dashed") +
-  labs(title = "Headline Length vs Engagement", subtitle = "Red = Linear, Blue = LOESS",
+  labs(title = "Headline Length vs Engagement",
        x = "Length (characters)", y = "Score") +
   theme_minimal()
 
@@ -328,8 +331,8 @@ cat("SECTION 8: MULTIPLE REGRESSION\n")
 cat("============================================================\n")
 
 model_full <- lm(engagement_score ~ main_category + news_provider + year +
-                   headline_length + month + day_of_week,
-                 data = ds_clean %>% mutate(month = month(date_parsed)))
+                   headline_length + month_num + day_of_week,
+                 data = ds_clean)
 
 cat("--- Full Regression Model ---\n")
 summary(model_full)
@@ -355,8 +358,8 @@ cat("2. PROVIDER: Eta-sq =", round(eta_sq_prov, 4), "- explains", round(eta_sq_p
 cat("3. YEARLY TREND: Slope =", round(coef(trend_model)[2], 4),
     "-", ifelse(coef(trend_model)[2] > 0, "increasing", "decreasing"), "over time\n")
 cat("4. HEADLINE LENGTH: r =", round(cor_length$estimate, 4),
-    "-", ifelse(abs(cor_length$estimate) < 0.1, "negligible", 
-         ifelse(abs(cor_length$estimate) < 0.3, "weak", "moderate")), "relationship\n")
+    "-", ifelse(abs(cor_length$estimate) < 0.1, "negligible",
+                ifelse(abs(cor_length$estimate) < 0.3, "weak", "moderate")), "relationship\n")
 cat("5. FULL MODEL: R-sq =", round(summary(model_full)$r.squared, 4),
     "- all factors explain", round(summary(model_full)$r.squared * 100, 2), "% of variance\n")
 cat("6. NA: Removed", na_rows, "rows (", round(na_rows/total_rows*100, 2), "%) -",

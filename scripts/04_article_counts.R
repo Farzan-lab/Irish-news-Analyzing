@@ -5,9 +5,11 @@
 #           Use a SINGLE R function to display Min, Max, Mean per provider.
 # Depth: Beyond basic tapply — explore distribution and coverage patterns.
 # ============================================================
+library(dplyr)
+library(ggplot2)
+library(scales)
 
 # --- Step 1: Count total articles for each combination of provider and category ---
-# (Multiple functions allowed for data preparation)
 article_counts <- as.data.frame(table(ds$news_provider, ds$headline_category))
 colnames(article_counts) <- c("news_provider", "headline_category", "total_articles")
 
@@ -51,10 +53,11 @@ print(category_coverage %>% filter(covered_by_n_providers == all_providers_count
 cat("\nCategories covered by only 1 provider:\n")
 print(category_coverage %>% filter(covered_by_n_providers == 1))
 
-# Visualize the distribution
+# Visualize the distribution (fixed y-axis formatting)
 ggplot(article_counts %>% filter(total_articles > 0),
        aes(x = news_provider, y = total_articles)) +
   geom_boxplot(fill = "lightblue") +
+  scale_y_continuous(labels = scales::comma) +
   labs(title = "Distribution of Article Counts Across Categories per Provider",
        subtitle = "Each data point represents a category's article count for that provider",
        x = "News Provider", y = "Total Articles per Category") +
