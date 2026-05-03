@@ -5,6 +5,9 @@
 #           Which headline category has the lowest number of articles?
 # ============================================================
 
+# Remove negative engagement scores before analysis
+ds <- ds %>% filter(is.na(engagement_score) | engagement_score >= 0)
+
 # --- Part A: Provider with Highest Mean Engagement ---
 cat("=== Part A: Mean Engagement by Provider ===\n")
 

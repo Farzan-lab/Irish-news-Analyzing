@@ -3,7 +3,7 @@
 # ============================================================
 
 # Load required libraries
-install.packages("dplyr")
+
 library(dplyr)
 library(lubridate)
 library(ggplot2)
